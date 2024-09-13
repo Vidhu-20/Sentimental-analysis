@@ -1,0 +1,196 @@
+#Load dataset to google colab
+#Print the data set
+
+import pandas as pd
+data = pd.read_csv("/content/amazon_vfl_reviews.csv")
+data.head(100)
+
+#Check the number of rows and columns of dataset
+
+import pandas as pd
+data = pd.read_csv("/content/amazon_vfl_reviews.csv")
+num_rows = data.shape[0]
+num_cols = data.shape[1]
+print(f'The dataset has {num_rows} rows.')
+print(f'The dataset has {num_cols} columns.')
+
+#Data pre processing
+import pandas as pd
+import re
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# Download NLTK resources (if not already downloaded)
+nltk.download('punkt')
+nltk.download('stopwords')
+
+# Example dataset (replace with your dataset)
+data = pd.read_csv("/content/amazon_vfl_reviews.csv")
+
+# Function to preprocess text in the 'review' column
+def preprocess_text(text):
+    # Handle potential float values
+    if isinstance(text, float):
+        return ""  # Or handle float values differently as needed
+
+    # Convert to lowercase
+    text = text.lower()
+
+    # Remove HTML tags, URLs, and non-alphabetic characters
+    text = re.sub(r'<[^>]+>', ' ', text)  # HTML tags
+    text = re.sub(r'http\S+', ' ', text)  # URLs
+    text = re.sub(r'[^a-z\s]', '', text)  # Non-alphabetic
+
+    # Tokenize text
+    tokens = nltk.word_tokenize(text)
+
+    # Remove stopwords
+    stop_words = set(stopwords.words('english'))
+    tokens = [word for word in tokens if word not in stop_words]
+
+    # Initialize stemming
+    stemmer = PorterStemmer()
+
+    # Stemming
+    stemmed_tokens = [stemmer.stem(word) for word in tokens]
+
+    # Join tokens back into a single string
+    preprocessed_text = ' '.join(stemmed_tokens)
+
+    return preprocessed_text
+
+# Apply preprocessing function to 'review' column
+data['cleaned_review'] = data['review'].apply(preprocess_text)
+
+# Display the cleaned dataset
+print(data.head())
+
+# Example of TF-IDF vectorization
+tfidf_vectorizer = TfidfVectorizer(max_features=5000)
+X_tfidf = tfidf_vectorizer.fit_transform(data['cleaned_review'])
+
+# Print the shape of the TF-IDF matrix
+print(f'TF-IDF Matrix Shape: {X_tfidf.shape}')
+
+"""
+1.Defines Sentiment Analysis Function:
+Returns Postive,Negative,Neutral
+'positive' if the polarity is greater than 0 (indicating positive sentiment),
+'negative' if less than 0 (indicating negative sentiment),
+'neutral' if the polarity is 0.
+2.Applies Sentiment Analysis:
+Creates a new column 'sentiment' in data that stores the sentiment label
+('positive', 'negative', or 'neutral') for each review.
+3.Visualizes Sentiment Distribution:
+Uses seaborn.countplot to create a bar plot that visualizes the distribution of
+sentiment labels ('positive', 'negative', 'neutral')
+in the 'sentiment' column of data.
+"""
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from textblob import TextBlob  # Example sentiment analysis library
+
+# Load dataset
+data = pd.read_csv("/content/amazon_vfl_reviews.csv")
+
+# Assuming preprocessing (cleaning, tokenization, etc.) of 'review' column is done
+
+# Perform sentiment analysis (example using TextBlob)
+def analyze_sentiment(text):
+    # Handle non-string values
+    if not isinstance(text, str):
+        return 'neutral'  # Or handle non-string values as needed
+
+    analysis = TextBlob(text)
+    if analysis.sentiment.polarity > 0:
+        return 'positive'
+    elif analysis.sentiment.polarity < 0:
+        return 'negative'
+    else:
+        return 'neutral'
+
+# Apply sentiment analysis to each review
+data['sentiment'] = data['review'].apply(analyze_sentiment)
+
+# Visualize sentiment distribution
+plt.figure(figsize=(8, 6))
+sns.countplot(data['sentiment'])
+plt.title('Sentiment Distribution')
+plt.xlabel('Sentiment')
+plt.ylabel('Count')
+plt.show()
+"""
+# Compare with rating distribution (example)
+plt.figure(figsize=(8, 6))
+sns.countplot(data['rating'])
+plt.title('Rating Distribution')
+plt.xlabel('Rating')
+plt.ylabel('Count')
+plt.show()"""
+
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, accuracy_score
+from textblob import TextBlob
+
+# Load dataset
+data = pd.read_csv('/content/amazon_vfl_reviews.csv')
+
+# Fill missing values in 'review' column with empty strings
+data['review'] = data['review'].fillna('')  # Replace NaN with empty strings
+
+# Text vectorization using TF-IDF
+tfidf = TfidfVectorizer(max_features=5000)
+X = tfidf.fit_transform(data['review'])
+"""
+# Calculate sentiments and add them to the DataFrame
+def analyze_sentiment(text):
+    # Handle non-string values
+    if not isinstance(text, str):
+        return 'neutral'  # Or handle non-string values as needed
+
+    analysis = TextBlob(text)
+    if analysis.sentiment.polarity > 0:
+        return 'positive'
+    elif analysis.sentiment.polarity < 0:
+        return 'negative'
+    else:
+        return 'neutral'"""
+
+data['sentiment'] = data['review'].apply(analyze_sentiment) # Calculate and store sentiments
+
+# Labels (now the 'sentiment' column exists)
+y = data['sentiment']
+
+# Split the dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train a Logistic Regression model
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+# Predict on the test set
+y_pred = model.predict(X_test)
+
+# Evaluate the model
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("\nClassification Report:\n", classification_report(y_test, y_pred))
+
+# Confusion Matrix
+conf_matrix = confusion_matrix(y_test, y_pred)
+plt.figure(figsize=(8, 6))
+sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues')
+plt.title('Confusion Matrix')
+plt.xlabel('Predicted Labels')
+plt.ylabel('True Labels')
+plt.show()
+
+# Cross-Validation
+cv_scores = cross_val_score(model, X, y, cv=5, scoring='accuracy')
+print("Cross-Validation Accuracy Scores:", cv_scores)
+print("Mean Cross-Validation Accuracy:", cv_scores.mean())
