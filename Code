@@ -26,7 +26,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 nltk.download('punkt')
 nltk.download('stopwords')
 
-# Example dataset (replace with your dataset)
+# Example dataset 
 data = pd.read_csv("/content/amazon_vfl_reviews.csv")
 
 # Function to preprocess text in the 'review' column
